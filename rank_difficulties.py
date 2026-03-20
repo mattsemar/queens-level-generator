@@ -16,7 +16,7 @@ if __name__ == '__main__':
     most_difficult_board = None
     difficulties = []
     for filename in listdir:
-        if filename.endswith(".ts") and not filename.startswith("levelSample.ts") and (filename.endswith("level281.ts") or filename.endswith("level273.ts")):
+        if filename.endswith(".ts") and not filename.startswith("levelSample.ts") and (filename.endswith("level333.ts") or filename.endswith("level273.ts")):
             # if filename.endswith("level210.ts"):
             filepath = os.path.join(args.directory, filename)
             print("Processing file:", filepath)

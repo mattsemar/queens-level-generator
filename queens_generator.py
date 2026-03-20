@@ -7,7 +7,7 @@ from HeuristicSolver import HeuristicSolver
 from board_util import get_single_cell_regions, has_disconnected_colors
 from queens_board_draw import ImgUtil
 from solver import run_solver, SolverType
-from vanity_boards import jack_o_13
+from vanity_boards import jack_o_13, fl_clover
 
 positions_by_size = {}
 
@@ -228,7 +228,7 @@ def generate_random_board_v2_with_initial(size, num_regions):
     vanity_colors = set()
 
     # new convention is that vanity boards must use As as blank spots and other letters as vanity colors
-    vanity_board = copy.deepcopy(jack_o_13)
+    vanity_board = copy.deepcopy(fl_clover)
     for i in range(len(vanity_board)):
         for j in range(len(vanity_board[i])):
             if vanity_board[i][j] != 'A':

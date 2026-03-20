@@ -374,6 +374,20 @@ community_281 = [
     ["E", "E", "E", "E", "E", "E", "E", "E", "E", "E", "E", "P", "P", "P", "P", "P"]
 ]
 
+community_333 = [
+    ['A', 'A', 'A', 'A', 'A', 'A', 'A', 'A', 'A', 'A', 'K'],
+    ['A', 'D', 'D', 'D', 'D', 'A', 'A', 'A', 'A', 'K', 'K'],
+    ['A', 'D', 'B', 'D', 'D', 'D', 'D', 'A', 'C', 'K', 'K'],
+    ['D', 'D', 'B', 'D', 'D', 'D', 'D', 'A', 'C', 'K', 'K'],
+    ['D', 'D', 'B', 'B', 'B', 'C', 'C', 'C', 'C', 'K', 'F'],
+    ['D', 'D', 'D', 'D', 'B', 'H', 'K', 'K', 'K', 'K', 'F'],
+    ['D', 'D', 'D', 'D', 'H', 'H', 'K', 'K', 'K', 'F', 'F'],
+    ['D', 'D', 'I', 'I', 'J', 'G', 'K', 'K', 'K', 'K', 'F'],
+    ['D', 'D', 'I', 'I', 'J', 'G', 'K', 'K', 'K', 'K', 'F'],
+    ['D', 'J', 'J', 'J', 'J', 'G', 'G', 'G', 'G', 'F', 'F'],
+    ['D', 'J', 'J', 'J', 'J', 'E', 'E', 'E', 'E', 'E', 'E']
+]
+
 all_test_boards = [community_level_227_controversial_hard,
                    community_level_229_size_18,
                    board_with_backtracking_needed,
@@ -387,7 +401,8 @@ all_test_boards = [community_level_227_controversial_hard,
                    community_level_multiple_solutions,
                    no_solutions,
                    non_contig_board,
-                   community_281
+                   community_281,
+                   community_333,
                    ]
 
 test_sb_3 = [
@@ -406,4 +421,4 @@ test_sb_3 = [
     ["O", "O", "M", "M", "M", "M", "I", "I", "N", "N", "N", "N", "N", "K", "K"],
     ["O", "O", "N", "N", "N", "N", "N", "N", "N", "N", "N", "N", "N", "N", "K"],
     ["O", "O", "O", "O", "O", "N", "N", "N", "N", "N", "N", "N", "N", "N", "N"],
-  ],
+],

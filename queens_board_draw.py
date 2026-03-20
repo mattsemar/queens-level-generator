@@ -66,6 +66,25 @@ color_hues = {
     "atomicTangerine": "#FAA889"
 }
 
+color_hue_names = {
+      "A": "#5E4FA2",
+      "B": "#E6F598",
+      "C": "#3287BD",
+      "D": "#ACDDA5",
+      "E": "#6C7A89",
+      "F": "#D53E4F",
+      "G": "#E6F598",
+      "H": "#8E8875",
+      "I": "#F56D43",
+      "J": "#8E6E8E",
+      "K": "#467A7D",
+      "L": "#FAA889",
+      "M": "#91F5AD",
+      "N": "#5BBA6F",
+      "O": "#C9C9EE",
+      "P": "#E6F388",
+      "Q": "#000000",
+  }
 
 # colors = {
 # "A": tuple( color_hues["lightWisteria"].replace("#", "")[i:i+2] for i in (0, 2, 4) ),
@@ -95,8 +114,9 @@ class ImgUtil:
 
                 cell = board[i][j]
                 cell_color_key = cell[0] if isinstance(cell, str) and len(cell) > 0 else 'N'
-                fill_color = color_hues[
-                    color_names[cell_color_key]] if cell_color_key in color_names.keys() else "white"
+                # fill_color = color_hues[
+                #     color_names[cell_color_key]] if cell_color_key in color_names.keys() else "white"
+                fill_color = color_hue_names[cell_color_key] if cell_color_key in color_names.keys() else "white"
                 if fill_color == "white":
                     print(f"Warning: Color for cell '{cell}' not found in color_hues. Using white.")
                 draw.rectangle([j * cell_size, i * cell_size, (j + 1) * cell_size, (i + 1) * cell_size],

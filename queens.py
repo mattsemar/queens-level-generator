@@ -141,7 +141,9 @@ if args.command == 'solve' or args.command == 'draw':
                   stats.get_key_value('conflicts') if stats else 0)
             if sln is not None:
                 print("Solution:", sln)
-                solved_board = normalize_sections(board.copy())
+                # solved_board = normalize_sections(board.copy())
+                og_board = copy.deepcopy(board)
+                solved_board = board.copy()
                 for l in sln:
                     row, col = l
                     solved_board[row - 1][col - 1] = solved_board[row - 1][col - 1] + '_Q'
@@ -150,7 +152,7 @@ if args.command == 'solve' or args.command == 'draw':
                     ImgUtil.print_board(solved_board, normalize=False)
                 if args.draw:
                     ImgUtil.draw_board(solved_board, args.draw)
-                heuristic_solver = HeuristicSolver( board, v2_deductions=False)
+                heuristic_solver = HeuristicSolver( og_board, v2_deductions=False)
                 heuristic_solver.solve()
                 if heuristic_solver.is_solved():
                     print("Heuristic solved")
