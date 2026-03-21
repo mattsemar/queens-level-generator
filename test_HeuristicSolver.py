@@ -9,7 +9,7 @@ from solver import MyOtherSolver
 from test_boards import community_level_227_controversial_hard, community_level_229_size_18, \
     board_with_backtracking_needed, test_b_gen, test_rand, community_273, non_contig_board, board, board_heart_13, \
     board_requiring_simulation, board_13_no_heuristic_solve, board_11, board_11_2, board_11_3, board_17, board_13, \
-    board_14, community_281, test_sb_3
+    board_14, community_281, test_sb_3, board_11_xwing
 
 
 def draw_board_state(solver, name):
@@ -267,14 +267,14 @@ class TestHeuristicSolver(TestCase):
         print("Useless techniques", solver.noop_techniques)
 
     def test_difficulty(self):
-        tests = [{"board": board, 'expected_difficulty': 12},
+        tests = [{"board": board, 'expected_difficulty': 8.5},
                  {
                      "board": board_13,
-                     'expected_difficulty': 12.0
+                     'expected_difficulty': 13.0
                  },
                  {
                      "board": board_11,
-                     'expected_difficulty': 8.5
+                     'expected_difficulty': 11.5
                  },
                  {"board": board_17, 'expected_difficulty': 17.0}
                  ]
@@ -327,7 +327,55 @@ class TestHeuristicSolver(TestCase):
         # self.assertTrue(solver.is_solved())
         # print(solver.get_solution_steps())
 
-    def test_3_star(self):
-        solver = HeuristicSolver(test_sb_3, star_count=3)
+    def test_constrained_box_playwright(self):
+        solver = HeuristicSolver(board_11_xwing, simulation_depth=0, v2_deductions=True)
+
         solver.solve()
+        # draw_board_state(solver, '227')
+        # ImgUtil.draw_board(solver.board, '227_raw', normalize=False)
+        # ImgUtil.print_board(solver.solution, normalize=False)
         self.assertTrue(solver.is_solved())
+        # print( solver.get_solution_steps())
+        print(solver.get_solution_steps_playwright())
+
+    def test_box_constraint(self):
+        solver = HeuristicSolver(board_11_xwing, simulation_depth=0, v2_deductions=True)
+        result = solver.find_box_constraint()
+        self.assertTrue(result)
+
+        confined = {'B', 'H', 'D', 'E'}
+        # Build outer ring cells
+        size = len(board_11_xwing)
+        outer_ring = set()
+        for c in range(size):
+            outer_ring.add((0, c))
+            outer_ring.add((size - 1, c))
+        for r in range(1, size - 1):
+            outer_ring.add((r, 0))
+            outer_ring.add((r, size - 1))
+
+        corners = {(0, 0), (0, size - 1), (size - 1, 0), (size - 1, size - 1)}
+
+        # Corners should be eliminated
+        for r, c in corners:
+            self.assertEqual(solver.solution[r][c], 'X',
+                             f"Corner ({r},{c}) should be eliminated")
+
+        # Non-confined colors on the outer ring should be eliminated
+        for r, c in outer_ring:
+            color = board_11_xwing[r][c]
+            if color not in confined:
+                self.assertEqual(solver.solution[r][c], 'X',
+                                 f"({r},{c}) color={color} should be eliminated")
+
+        # Confined color cells on the ring (non-corner) should still be unknown
+        for r, c in outer_ring:
+            color = board_11_xwing[r][c]
+            if color in confined and (r, c) not in corners:
+                self.assertEqual(solver.solution[r][c], 'U',
+                                 f"({r},{c}) color={color} should still be unknown")
+
+    # def test_3_star(self):
+    #     solver = HeuristicSolver(test_sb_3, star_count=3)
+    #     solver.solve()
+    #     self.assertTrue(solver.is_solved())

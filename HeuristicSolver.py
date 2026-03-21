@@ -32,7 +32,7 @@ class HeuristicTechnique:
 
 class HeuristicSolver:
 
-    def __init__(self, board, simulation_depth=0, v2_deductions=True, star_count = 1):
+    def __init__(self, board, simulation_depth=0, v2_deductions=True, star_count=1):
         self.solution = copy.deepcopy(board)
         self.board = copy.deepcopy(board)
         self.simulation_mode = simulation_depth > 0
@@ -54,9 +54,6 @@ class HeuristicSolver:
 
         self.has_single_color = len(single_colors) > 0
         self.size = len(board)
-        self.colors = [chr(ord('A') + i) for i in range(self.size)]
-        self.techniques_used: List[HeuristicTechnique] = []
-        self.noop_techniques: List[str] = []
         self.techniques = [
             #  ['mark_x_for_single_squares', 'find_single_possible', 'find_lines', 'find_2tuples_with_only_2_possibles', 'find_color_2tuples', 'find_3tuples_with_only_3_possibles', 'placing_queen_eliminates_color', 'placing_queen_causes_obvious_conflict', 'mark_x_for_single_squares', 'find_single_possibilities__only_one_position_for_color', 'find_single_possibilities__only_one_position_for_color', 'find_single_possible', 'mark_x_for_single_squares', 'find_single_possibilities__only_one_position_for_color', 'find_single_possibilities__only_one_position_for_color', 'find_single_possibilities__only_one_position_for_color'] difficulty level: 16
             self.mark_x_for_single_squares,
@@ -64,6 +61,7 @@ class HeuristicSolver:
             self.do_find_lines,
             self.find_color_ntuples_iter,
             self.find_ntuples_with_only_n_possibles_iter,
+            self.find_box_constraint,
 
             # self.find_ntuples_with_only_3_possibles,
             # self.find_ntuples_with_only_4_possibles,
@@ -88,6 +86,9 @@ class HeuristicSolver:
             self.test_placing_queen_causes_obvious_conflict,
             self.simulate,
         ]
+        self.colors = [chr(ord('A') + i) for i in range(self.size)]
+        self.techniques_used: List[HeuristicTechnique] = []
+        self.noop_techniques: List[str] = []
         self.attempts = 0
         self.difficulty = 0
         self.v2_deductions = v2_deductions
@@ -276,6 +277,9 @@ class HeuristicSolver:
         progress = self.apply_tier_one_techniques()
         if progress:
             return progress
+        progress = self.find_box_constraint() or progress
+        if progress:
+            return progress
         progress = self.find_ntuples_with_only_n_possibles(2) or progress
         if progress:
             return progress
@@ -308,6 +312,119 @@ class HeuristicSolver:
         if self.solution[row][column] == UNKNOWN_VALUE:
             self.solution[row][column] = KNOWN_EMPTY
 
+    def find_box_constraint(self):
+        """Find boxes with 4 colors that appear ONLY in the outer edge (perimeter) of the box:
+            * OTHER colors in the box's perimeter can be eliminated
+            * OTHER colors that are in the same row or column as one of the box's edges can be eliminated (above, below, left, right of box)
+            * the corners of the box can be eliminated because placing a queen in one of them would block both the row and column and not allow all 4 colors to have a queen
+        """
+        progress = False
+        new_known_empties: List[Tuple[int, int]] = []
+        descriptions: List[str] = []
+
+        # Precompute unknown cell coordinates per color (cells that still need resolution)
+        unknown_color_coords = {}
+        for color in self.colors:
+            unknown_color_coords[color] = set()
+        for r in range(self.size):
+            for c in range(self.size):
+                if self.solution[r][c] == UNKNOWN_VALUE:
+                    color = self.board[r][c]
+                    if color in unknown_color_coords:
+                        unknown_color_coords[color].add((r, c))
+
+        # Try all possible rectangular frames (need at least 3 rows and 3 cols for 4 distinct sides)
+        for r1 in range(self.size - 2):
+            for r2 in range(r1 + 2, self.size):
+                for c1 in range(self.size - 2):
+                    for c2 in range(c1 + 2, self.size):
+                        # Build the set of border cells for this frame
+                        frame_cells = set()
+                        for c in range(c1, c2 + 1):
+                            frame_cells.add((r1, c))
+                            frame_cells.add((r2, c))
+                        for r in range(r1 + 1, r2):
+                            frame_cells.add((r, c1))
+                            frame_cells.add((r, c2))
+
+                        corners = {(r1, c1), (r1, c2), (r2, c1), (r2, c2)}
+
+                        # Find colors whose remaining unknown cells are ALL within this frame border
+                        confined_colors = []
+                        for color in self.colors:
+                            coords = unknown_color_coords[color]
+                            if not coords:
+                                continue
+                            if coords.issubset(frame_cells):
+                                confined_colors.append(color)
+
+                        if len(confined_colors) != 4:
+                            continue
+
+                        frame_desc = f"Frame rows {r1 + 1}-{r2 + 1}, cols {c1 + 1}-{c2 + 1}"
+                        colors_str = ','.join(confined_colors)
+
+                        # Eliminate non-confined colors from the frame border
+                        for r, c in frame_cells:
+                            if self.board[r][c] not in confined_colors and self.solution[r][c] == UNKNOWN_VALUE:
+                                self.mark_x(r, c)
+                                new_known_empties.append((r, c))
+                                descriptions.append(
+                                    f"{frame_desc}: colors {colors_str} are confined to frame, eliminating {self.board[r][c]}")
+                                progress = True
+
+                        # Eliminate corners (placing queen at corner consumes 2 sides, only 2 left for 3 colors)
+                        for r, c in corners:
+                            if self.solution[r][c] == UNKNOWN_VALUE:
+                                self.mark_x(r, c)
+                                new_known_empties.append((r, c))
+                                descriptions.append(
+                                    f"{frame_desc}: corner at ({c + 1},{r + 1}) eliminated, queen here would consume 2 of 4 sides")
+                                progress = True
+
+                        # Eliminate cells OUTSIDE the frame that share a row/column with a frame side,
+                        # since each side's row/column is claimed by one of the confined colors.
+                        # Top side claims row r1, bottom claims row r2, left claims col c1, right claims col c2.
+                        for c in range(self.size):
+                            if c < c1 or c > c2:
+                                if self.solution[r1][c] == UNKNOWN_VALUE:
+                                    self.mark_x(r1, c)
+                                    new_known_empties.append((r1, c))
+                                    descriptions.append(
+                                        f"{frame_desc}: row {r1 + 1} claimed by frame, eliminating {self.board[r1][c]} outside frame")
+                                    progress = True
+                                if self.solution[r2][c] == UNKNOWN_VALUE:
+                                    self.mark_x(r2, c)
+                                    new_known_empties.append((r2, c))
+                                    descriptions.append(
+                                        f"{frame_desc}: row {r2 + 1} claimed by frame, eliminating {self.board[r2][c]} outside frame")
+                                    progress = True
+                        for r in range(self.size):
+                            if r < r1 or r > r2:
+                                if self.solution[r][c1] == UNKNOWN_VALUE:
+                                    self.mark_x(r, c1)
+                                    new_known_empties.append((r, c1))
+                                    descriptions.append(
+                                        f"{frame_desc}: col {c1 + 1} claimed by frame, eliminating {self.board[r][c1]} outside frame")
+                                    progress = True
+                                if self.solution[r][c2] == UNKNOWN_VALUE:
+                                    self.mark_x(r, c2)
+                                    new_known_empties.append((r, c2))
+                                    descriptions.append(
+                                        f"{frame_desc}: col {c2 + 1} claimed by frame, eliminating {self.board[r][c2]} outside frame")
+                                    progress = True
+
+                        if progress:
+                            self.add_technique(
+                                HeuristicTechnique(name="find_box_constraint", difficulty=5,
+                                                   known_empties_marked=new_known_empties,
+                                                   descriptions=descriptions))
+                            return progress
+
+        if not progress:
+            self.add_noop_technique('find_box_constraint')
+        return progress
+
     def find_color_2tuples(self):
         return self.find_color_ntuples(2)
 
@@ -316,7 +433,6 @@ class HeuristicSolver:
             if self.find_color_ntuples(n):
                 return True
         return False
-
 
     def find_color_ntuples(self, n):
         # if there are n colors that are limited to n rows, then mark other colors in those n rows as X
@@ -544,7 +660,8 @@ class HeuristicSolver:
                             progress = True
                             self.increment_technique_count('placing_queen_causes_obvious_conflict')
                             self.difficulty += 4
-                            extra_steps = s2.get_solution_steps(start_step=len(self.techniques_used)+1, extra_padding="\t\t\t\t", step_prefix="(Sub) ")
+                            extra_steps = s2.get_solution_steps(start_step=len(self.techniques_used) + 1,
+                                                                extra_padding="\t\t\t\t", step_prefix="(Sub) ")
                             # print("Extra steps:\n", extra_steps)
                             self.add_technique(HeuristicTechnique('placing_queen_causes_obvious_conflict', difficulty=6,
                                                                   known_empties_marked=[(r, c)],
@@ -593,7 +710,8 @@ class HeuristicSolver:
                             self.increment_technique_count('assuming_no_queen_causes_conflict')
                             self.difficulty += 4
                             # extra_steps = s2.get_solution_steps(start_step=len(self.techniques_used))
-                            extra_steps = s2.get_solution_steps(start_step=len(self.techniques_used)+1, extra_padding="\t\t\t\t", step_prefix="(Sub) ")
+                            extra_steps = s2.get_solution_steps(start_step=len(self.techniques_used) + 1,
+                                                                extra_padding="\t\t\t\t", step_prefix="(Sub) ")
                             self.add_technique(HeuristicTechnique('assuming_no_queen_causes_conflict', difficulty=8,
                                                                   queens_placed=[(r, c)],
                                                                   description="\n".join(

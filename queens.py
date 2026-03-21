@@ -152,7 +152,7 @@ if args.command == 'solve' or args.command == 'draw':
                     ImgUtil.print_board(solved_board, normalize=False)
                 if args.draw:
                     ImgUtil.draw_board(solved_board, args.draw)
-                heuristic_solver = HeuristicSolver( og_board, v2_deductions=False)
+                heuristic_solver = HeuristicSolver( og_board, v2_deductions=True)
                 heuristic_solver.solve()
                 if heuristic_solver.is_solved():
                     print("Heuristic solved")

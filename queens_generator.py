@@ -7,7 +7,7 @@ from HeuristicSolver import HeuristicSolver
 from board_util import get_single_cell_regions, has_disconnected_colors
 from queens_board_draw import ImgUtil
 from solver import run_solver, SolverType
-from vanity_boards import jack_o_13, fl_clover
+from vanity_boards import jack_o_13, fl_clover, corners_2
 
 positions_by_size = {}
 
@@ -228,7 +228,7 @@ def generate_random_board_v2_with_initial(size, num_regions):
     vanity_colors = set()
 
     # new convention is that vanity boards must use As as blank spots and other letters as vanity colors
-    vanity_board = copy.deepcopy(fl_clover)
+    vanity_board = copy.deepcopy(corners_2)
     for i in range(len(vanity_board)):
         for j in range(len(vanity_board[i])):
             if vanity_board[i][j] != 'A':
@@ -407,16 +407,10 @@ def generate(size=15, use_vanity=False, draw=True, max_boards=500):
             broken_board_count += 1
             print(f"broken board {broken_board_count}")
             continue  # Skip if the board is invalid (not enough regions)
-        # Found no actual dupe boards so commenting for now
-        # board_hash = hash_board(board)
-        # if board_hash in generated_boards:
-        #     print(f"Skipping already generated board with hash {board_hash}")
-        #     continue
-        # generated_boards.add(board_hash)
+
         attempts += 1
         solutions, stats, solution, has_one_color = run_solver(board, solver_type=SolverType.OG, count_all=False, max_solutions=2)
-        if has_one_color and False:
-            expanded_in_one_direction = False
+        if has_one_color:
             for i in range(4):
                 new_board = expand_single_regions(board, start_direction_index=i)
                 single_regions = get_single_cell_regions(new_board)
@@ -426,12 +420,7 @@ def generate(size=15, use_vanity=False, draw=True, max_boards=500):
                         continue
                     shifted_boards.append(new_board)
                     shifted_boards_added += 1
-                    # print("Expanded single cell regions into a new board", len(shifted_boards), "pending boards to try")
-                    expanded_in_one_direction = True
 
-            # if not expanded_in_one_direction:
-            #     print("Still have single cell regions after expanding in all direction")
-            #     ImgUtil.print_board(board)
 
         # print("stats", stats, "conflicts" in stats.keys)
         conflicts = stats.get_key_value('conflicts') if stats and 'conflicts' in stats.keys() else 0
@@ -470,26 +459,25 @@ def generate(size=15, use_vanity=False, draw=True, max_boards=500):
             zero_to_multiple_ratios["zero"] += 1
 
         if solutions == 1:
-            # print("Solution", solution)
             valid_boards += 1
             zero_to_multiple_ratios["one"] += 1
-            h_solver = HeuristicSolver(board)
+            h_solver = HeuristicSolver(board, simulation_depth=0, v2_deductions=True)
             h_solver.solve()
             if not h_solver.is_solved():
                 print("Heuristic solver failed to solve")
             else:
                 print("Heuristic solver succeeded")
                 score = h_solver.difficulty
-                if "simulation" in h_solver.get_technique_names():
-                    score = 0
-                    print("Setting score to 0 due to simulation technique required")
+                # if "simulation" in h_solver.get_technique_names():
+                #     score = 0
+                #     print("Setting score to 0 due to simulation technique required")
             print("Board with 1 solution found. Heuristic", score, "Test url",  ImgUtil.generate_request_url(board))
             if most_both < score:  # and decisions > 800:
                 print("solution", solution)
                 most_both = score
                 print(f"New most conflicts: {most_both} for size {size} after {attempts} attempts", conflicts,
                       decisions, "Heuristic difficulty:", h_solver.difficulty)
-            elif score > 4:
+            elif score > 40:
                 ImgUtil.draw_board(board,
                                    f"size_{size}_nonbest_attempt_{attempts}_answers_{answers}_score_{score}_was_shifted_{was_shifted}")
                 ImgUtil.print_board(board)
