@@ -12,7 +12,7 @@ class TestSolver(TestCase):
 
         other_solver = MyOtherSolver(community_level_227_controversial_hard)
         solution_count, solutions, has_one_color = other_solver.count_solutions()
-        og_count, stats, og_solutions, og_has_one_color = MySolver.count_solutions(community_level_227_controversial_hard, print_solutions=True)
+        og_count, stats, og_solutions, og_has_one_color, _ = MySolver.count_solutions(community_level_227_controversial_hard, print_solutions=True)
         self.assertEqual(solution_count, og_count)
 
     def test_solve_multiple(self):
@@ -50,7 +50,7 @@ class TestSolver(TestCase):
         elapsed_new = ((datetime.now() - start_time_new).total_seconds())
 
         start_time_og = datetime.now()
-        og_count, stats, og_solutions, og_has_one_color = MySolver.count_solutions(board)
+        og_count, stats, og_solutions, og_has_one_color, _ = MySolver.count_solutions(board)
         elapsed_og = ((datetime.now() - start_time_og).total_seconds())
         self.assertEqual(solution_count, og_count)
 

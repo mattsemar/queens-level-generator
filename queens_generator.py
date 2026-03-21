@@ -327,6 +327,7 @@ def generate_random_board_v2_with_initial(size, num_regions):
 
 # generate_random_board_v2(7, 7)
 
+
 # Main loop: try random boards until one with 1 solution is found
 
 def generate(size=15, use_vanity=False, draw=True, max_boards=500):
@@ -372,8 +373,8 @@ def generate(size=15, use_vanity=False, draw=True, max_boards=500):
             continue  # Skip if the board is invalid (not enough regions)
 
         attempts += 1
-        solutions, stats, solution, has_one_color = run_solver(board, solver_type=SolverType.OG, count_all=False, max_solutions=2)
-        if has_one_color:
+        solutions, stats, solution, has_one_color, _ = run_solver(board, solver_type=SolverType.OG, count_all=False, max_solutions=2)
+        if has_one_color and False:
             for i in range(4):
                 new_board = expand_single_regions(board, start_direction_index=i)
                 single_regions = get_single_cell_regions(new_board)

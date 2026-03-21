@@ -45,7 +45,7 @@ class MySolver:
                         constrained_q_col=None, print_solutions=False, max_solutions=100, star_count=1):
         if star_count > 1:
             count = StarBattleSolver(board, stars_per_region=star_count).count_solutions()
-            return count, None, None, None
+            return count, None, None, None, []
 
         size = len(board)
         context = Context()
@@ -84,18 +84,20 @@ class MySolver:
             ))
 
         if solver.check() != sat:
-            return 0, None, None, len(regions_with_one_color) > 0
+            return 0, None, None, len(regions_with_one_color) > 0, []
 
         count = 0
         stats = solver.statistics()
 
         solution = []
+        all_solutions = []
         rows_values = {}
         while solver.check() == sat:
             count += 1
             m = solver.model()
 
             solution = [(int(str(l).replace("q__", "")) + 1, int(m[l].as_long()) + 1) for l in queens]
+            all_solutions.append(solution)
             solution_str = [(pad_number(int(str(l).replace("q__", "")) + 1, 2), pad_number((int(m[l].as_long()) + 1), 2))
                         for l in queens]
             for l in queens:
@@ -127,7 +129,7 @@ class MySolver:
                             print(
                                 f"Row {r} has multiple columns {len(rows_values[r])} {sorted(rows_values[r])}")
                     print(f"Cardinality score {card / size}")
-                return count, None, None, len(regions_with_one_color) > 0  # Limit to 100 solutions to avoid long runs
+                return count, None, None, len(regions_with_one_color) > 0, all_solutions
 
         if count > 1:
             if print_solutions:
@@ -146,8 +148,8 @@ class MySolver:
             if constrain_one_q and (constrained_q_row is not None and constrained_q_col is not None):
                 if solution[constrained_q_row] == (constrained_q_row + 1, constrained_q_col + 1):
                     print("Solution with constraint:", solution)
-            return count, stats, solution, len(regions_with_one_color) > 0
-        return count, None, None, len(regions_with_one_color) > 0
+            return count, stats, solution, len(regions_with_one_color) > 0, all_solutions
+        return count, None, None, len(regions_with_one_color) > 0, all_solutions
 
 
 class MyOtherSolver:
@@ -274,7 +276,7 @@ def run_solver(board: list[list[str]], solver_type: SolverType, count_all: bool 
         solver = MyOtherSolver(board, count_all=count_all)
         solution_count, solutions, has_one_color = solver.count_solutions()
         solution = solutions[0] if solutions is not None and len(solutions) > 0 else None
-        return solution_count, None, solution, has_one_color
+        return solution_count, None, solution, has_one_color, solutions if solutions else []
 
     if solver_type == SolverType.HEUR:
         solver = HeuristicSolver(board, v2_deductions=False)

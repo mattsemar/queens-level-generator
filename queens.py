@@ -133,7 +133,7 @@ if args.command == 'solve' or args.command == 'draw':
                 print(f"    {row},")
             print("]")
 
-            solutions, stats, sln, _ = MySolver.count_solutions(board, count_all=False,
+            solutions, stats, sln, _, _ = MySolver.count_solutions(board, count_all=False,
                                                                 print_solutions=args.show_solutions,
                                                                 max_solutions=args.max_solutions,
                                                                 star_count=args.star_count)

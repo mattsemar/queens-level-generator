@@ -106,7 +106,7 @@ class Test(TestCase):
             expanded_board = expand_single_regions(expandable_15, start_direction_index=i)
             single_regions = get_single_cell_regions(expanded_board)
             self.assertTrue(len(single_regions) == 0, f"Failed to eliminate single regions with direction index {i}")
-            count, _, _, _ = MySolver.count_solutions(expanded_board)
+            count, _, _, _, _ = MySolver.count_solutions(expanded_board)
             print(f"Solutions for expanded board with direction index {i}: {count}")
             ImgUtil.print_board(expanded_board, normalize=True)
 
@@ -115,6 +115,6 @@ class Test(TestCase):
             expanded_board = expand_single_regions(expandable_16, start_direction_index=i)
             single_regions = get_single_cell_regions(expanded_board)
             self.assertTrue(len(single_regions) == 0, f"Failed to eliminate single regions with direction index {i}")
-            count, _, _, _ = MySolver.count_solutions(expanded_board)
+            count, _, _, _, _ = MySolver.count_solutions(expanded_board)
             print(f"Solutions for expanded board with direction index {i}: {count}")
             ImgUtil.print_board(expanded_board, normalize=True)

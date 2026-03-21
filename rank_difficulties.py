@@ -45,7 +45,7 @@ if __name__ == '__main__':
             # if len(board) != 7:
             #     continue
             print("Link:", ImgUtil.generate_request_url(board))
-            solution_count, stats, solution, has_one_color = MySolver.count_solutions(board)
+            solution_count, stats, solution, has_one_color, _ = MySolver.count_solutions(board)
             if solution_count == 1:
                 solver  = HeuristicSolver(board, v2_deductions=True)
                 solver.solve()
