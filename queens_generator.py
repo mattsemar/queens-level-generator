@@ -373,8 +373,8 @@ def generate(size=15, use_vanity=False, draw=True, max_boards=500):
             continue  # Skip if the board is invalid (not enough regions)
 
         attempts += 1
-        solutions, stats, solution, has_one_color, _ = run_solver(board, solver_type=SolverType.OG, count_all=False, max_solutions=2)
-        if has_one_color and False:
+        solutions, stats, solution, has_one_color, _ = run_solver(board, solver_type=SolverType.BACKER, count_all=False, max_solutions=2)
+        if has_one_color:
             for i in range(4):
                 new_board = expand_single_regions(board, start_direction_index=i)
                 single_regions = get_single_cell_regions(new_board)

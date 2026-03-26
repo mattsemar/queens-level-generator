@@ -156,108 +156,70 @@ class MyOtherSolver:
 
     def __init__(self, board, count_all=False):
         self.solutions = []
-        self.rows = 0
         self.board = board
         self.count_all = count_all
         self.size = len(board)
-        self.colorCoords = {}
-        self.has_queen_in_color_map = {}
-        self.queen_columns = set()
         self.has_one_color = False
-        regions_with_one_color = set()
 
+        # Build region coords
+        region_cells = {}
         for r in range(self.size):
             for c in range(self.size):
                 color = board[r][c]
-                if color not in self.colorCoords:
-                    self.colorCoords[color] = []
-                    self.has_queen_in_color_map[color] = False
-                    regions_with_one_color.add(color)
-                self.colorCoords[color].append((r, c))
-                if len(self.colorCoords[color]) > 1 and color in regions_with_one_color:
-                    regions_with_one_color.remove(color)
-        # self.coordsForColor = {}
-        self.times = 0
-        self.has_one_color = len(regions_with_one_color) > 0
-        # for color, coords in self.colorCoords.items():
-        #     if len(coords) == 1:
-        #         self.has_one_color = True
-        # for coord in coords:
-        #     self.coordsForColor[coord] = color
+                if color not in region_cells:
+                    region_cells[color] = []
+                region_cells[color].append((r, c))
 
-        self.initial_board = [[0 for _ in range(self.size)] for _ in range(self.size)]
-        # print("Color coords:", self.colorCoords)
-        # print("Color coords:", self.coordsForColor)
+        self.has_one_color = any(len(cells) == 1 for cells in region_cells.values())
+
+        # Sort regions by size (MRV: smallest regions first)
+        self.sorted_regions = sorted(region_cells.keys(), key=lambda k: len(region_cells[k]))
+        self.region_cells = region_cells
+
+        self.used_rows = set()
+        self.used_cols = set()
+        self.queen_positions = []
 
     def count_solutions(self):
         self.backtrack(0)
-        # print("Count all", self.count_all, "Times called is_safe:", self.times, len(self.solutions))
         if len(self.solutions) > 1 and not self.count_all:
             return 2, self.solutions, self.has_one_color
         return len(self.solutions), self.solutions, self.has_one_color
 
-    def backtrack(self, row):
-        if row == self.size:
-            solution = []
-            for r in range(self.size):
-                for c in range(self.size):
-                    if self.initial_board[r][c] == 1:
-                        solution.append((r + 1, c + 1))
-
-            # color_set = set()
-            # for r, c in solution:
-            #     color_set.add(self.board[r - 1][c - 1])
-            # if len(color_set) == len(self.board):
+    def backtrack(self, region_idx):
+        if region_idx == len(self.sorted_regions):
+            solution = sorted([(r + 1, c + 1) for r, c in self.queen_positions])
             self.solutions.append(solution)
-            #     # print("Found solution:", solution)
-
             if len(self.solutions) >= 2 and not self.count_all:
-                return True  # Stop after finding two solutions if not counting all
+                return True
             return False
 
-        for col in range(self.size):
+        region = self.sorted_regions[region_idx]
+        cells = self.region_cells[region]
+
+        for row, col in cells:
             if self.is_safe(row, col):
-                # print("Setting queen at row", row, "col", col, self.times)
-                self.times += 1
-                # if self.has_queen_in_color_map[self.board[row][col]]:
-                #     continue
-                self.initial_board[row][col] = 1
-                self.has_queen_in_color_map[self.board[row][col]] = True
-                self.queen_columns.add(col)
-                should_stop = (not self.count_all and len(self.solutions) > 1) or self.backtrack(row + 1)
-                if should_stop:
+                self.used_rows.add(row)
+                self.used_cols.add(col)
+                self.queen_positions.append((row, col))
+
+                if self.backtrack(region_idx + 1):
                     return True
-                self.initial_board[row][col] = 0  # backtrack
-                self.has_queen_in_color_map[self.board[row][col]] = False
-                self.queen_columns.remove(col)
+
+                self.queen_positions.pop()
+                self.used_rows.discard(row)
+                self.used_cols.discard(col)
 
         return False
 
     def is_safe(self, row, col):
-        # check not same column
-        # for r in range(row):
-        #     if self.initial_board[r][col] == 1:
-        #         return False
-        #
-        if col in self.queen_columns:
+        if row in self.used_rows or col in self.used_cols:
             return False
 
-        # check not same diagonal
-        diags = [(-1, -1), (-1, 1), (1, -1), (1, 1)]
-        for dr, dc in diags:
-            r, c = row + dr, col + dc
-            if 0 <= r < self.size and 0 <= c < self.size:
-                if self.initial_board[r][c] == 1:
-                    return False
-
-        # check region constraint
-
-        color = self.board[row][col]
-        if self.has_queen_in_color_map[color]:
-            return False
-        # for r, c in self.colorCoords[color]:
-        #     if self.initial_board[r][c] == 1:
-        #         return False
+        # Check diagonal adjacency (one step only)
+        for qr, qc in self.queen_positions:
+            if abs(qr - row) == 1 and abs(qc - col) == 1:
+                return False
 
         return True
 

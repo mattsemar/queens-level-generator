@@ -63,7 +63,8 @@ color_hues = {
     "saharaSand": "#E6F388",
     "tallow": "#ADA68E",
     "turquoiseBlue": "#55EBE2",
-    "atomicTangerine": "#FAA889"
+    "atomicTangerine": "#FAA889",
+    "black": "#FFFFFF"
 }
 
 color_hue_names = {
@@ -84,6 +85,7 @@ color_hue_names = {
       "O": "#C9C9EE",
       "P": "#E6F388",
       "Q": "#000000",
+      "R": "#FFFFFF",
   }
 
 # colors = {
